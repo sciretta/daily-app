@@ -1,46 +1,60 @@
 use yew::prelude::*;
 
-enum Msg {
-    AddOne,
+
+#[derive(PartialEq, Properties)]
+pub struct Props {
+    pub children:Children
 }
 
-struct Model {
-    value: i64,
+
+#[function_component(Container)]
+fn container(props: &Props)  -> Html {
+    html!{
+       <div class={"container"}>
+       {props.children.clone()}
+       </div>
+    }
 }
 
-impl Component for Model {
-    type Message = Msg;
-    type Properties = ();
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {
-            value: 0,
-        }
+#[function_component(Drawer)]
+fn drawer() -> Html {
+    html!{
+        <aside class="mdc-drawer">
+        <div class="mdc-drawer__header">
+          <h3 class="mdc-drawer__title">{"Daily-App"}</h3>
+        </div>
+        <div class="mdc-drawer__content">
+          <nav class="mdc-list">
+            <a class="mdc-list-item mdc-list-item--activated" href="#" aria-current="page">
+              <span class="mdc-list-item__ripple"></span>
+              <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"inbox"}</i>
+              <span class="mdc-list-item__text">{"Inbox"}</span>
+            </a>
+            <a class="mdc-list-item" href="#">
+              <span class="mdc-list-item__ripple"></span>
+              <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"send"}</i>
+              <span class="mdc-list-item__text">{"Outgoing"}</span>
+            </a>
+            <a class="mdc-list-item" href="#">
+              <span class="mdc-list-item__ripple"></span>
+              <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"drafts"}</i>
+              <span class="mdc-list-item__text">{"Drafts"}</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
     }
+}
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            Msg::AddOne => {
-                self.value += 1;
-                // the value has changed so we need to
-                // re-render for it to appear on the page
-                true
-            }
-        }
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        // This gives us a component's "`Scope`" which allows us to send messages, etc to the component.
-        let link = ctx.link();
-        html! {
-            <div>
-                <button onclick={link.callback(|_| Msg::AddOne)}>{ "+1" }</button>
-                <p>{ self.value }</p>
-            </div>
-        }
+#[function_component(App)]
+fn app()->Html {
+    html!{
+      <Container>
+        <Drawer />
+       </Container>
     }
 }
 
 fn main() {
-    yew::start_app::<Model>();
+    yew::start_app::<App>(); 
 }
