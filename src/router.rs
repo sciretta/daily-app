@@ -4,7 +4,7 @@ use yew_router::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Routable)]
 pub enum Route {
-    #[at("/")]
+    #[at("/home")]
     Home,
     #[at("/task")]
     Task,

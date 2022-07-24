@@ -1,5 +1,5 @@
 use yew::prelude::*;
-
+use gloo;
 
 #[derive(PartialEq, Properties)]
 pub struct Props {
@@ -15,6 +15,21 @@ pub fn container(props: &Props)  -> Html {
     }
 }
 
+fn get_drawer_item_class(route_name:&str) -> String {
+  let uri = match gloo::utils::window().location().pathname()  {
+    Ok(uri) => uri,
+    Err(error) => format!("Error getting browser URI: {:?}", error),
+  };
+
+  if !uri.contains(route_name) {
+    String::from("mdc-list-item")
+    
+  }else {
+    String::from("mdc-list-item mdc-list-item--activated")
+  }
+
+}
+
 #[function_component(Drawer)]
 pub fn drawer() -> Html {
     html!{
@@ -24,17 +39,17 @@ pub fn drawer() -> Html {
         </div>
         <div class="mdc-drawer__content">
           <nav class="mdc-list">
-            <a class="mdc-list-item mdc-list-item--activated" href="/" aria-current="page">
+            <a class={get_drawer_item_class("home")} href="/home" aria-current="page">
               <span class="mdc-list-item__ripple"></span>
               <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"home"}</i>
               <span class="mdc-list-item__text">{"Home"}</span>
             </a>
-            <a class="mdc-list-item" href="/task">
+            <a class={get_drawer_item_class("task")} href="/task">
               <span class="mdc-list-item__ripple"></span>
               <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"task"}</i>
               <span class="mdc-list-item__text">{"Tasks"}</span>
             </a>
-            <a class="mdc-list-item" href="/stats">
+            <a class={get_drawer_item_class("stats")} href="/stats">
               <span class="mdc-list-item__ripple"></span>
               <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"query_stats"}</i>
               <span class="mdc-list-item__text">{"Stats"}</span>
