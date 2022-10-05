@@ -3,7 +3,7 @@ use gloo::{self, console::log};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_router::prelude::{ Link};
+use yew_router::prelude::*;
 
 #[derive(PartialEq, Properties)]
 pub struct PropsContainer {
@@ -25,8 +25,6 @@ fn get_drawer_item_class(route_name: &str) -> String {
         Err(error) => format!("Error getting browser URI: {:?}", error),
     };
 
-    log!(serde_json::to_string_pretty(&*uri).unwrap());
-
     if uri.contains(route_name) || (uri == "/" && route_name == "home") {
         String::from("mdc-list-item mdc-list-item--activated p-6")
     } else {
@@ -36,7 +34,21 @@ fn get_drawer_item_class(route_name: &str) -> String {
 
 #[function_component(Drawer)]
 pub fn drawer() -> Html {
-    log!(serde_json::to_string_pretty(&*"rendering").unwrap());
+    let history = use_history().unwrap();
+    let history2 = use_history().unwrap();
+    let history3 = use_history().unwrap();
+
+    let on_click_home = Callback::from(move |_| history.push(Route::Home));
+    let on_click_task = Callback::from(move |_| {
+        history2.push(
+            Route::Task {
+                id: "new".to_string(),
+            }
+            .clone(),
+        )
+    });
+    let on_click_stats = Callback::from(move |_| history3.push(Route::Stats));
+
     html! {
         <aside class="mdc-drawer">
         <div class="mdc-drawer__header">
@@ -44,28 +56,22 @@ pub fn drawer() -> Html {
         </div>
         <div class="mdc-drawer__content">
           <nav class="mdc-list">
-          <Link<Route> to={Route::Home} >
-            <div class={get_drawer_item_class("home")}>
-              <span class="mdc-list-item__ripple"></span>
-              <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"home"}</i>
-              <span class="mdc-list-item__text">{"Home"}</span>
-             </div>
-          </Link<Route>>
 
-          <Link<Route> to={Route::Task { id: "new".to_string() }}>
-            <div class={get_drawer_item_class("task")}><span class="mdc-list-item__ripple"></span>
-              <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"task"}</i>
-              <span class="mdc-list-item__text">{"Tasks"}</span>
-            </div>
-          </Link<Route>>
-
-          <Link<Route> to={Route::Stats}>
-            <div class={get_drawer_item_class("stats")}><span class="mdc-list-item__ripple"></span>
-
-            <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"query_stats"}</i>
-            <span class="mdc-list-item__text">{"Stats"}</span>
-            </div>
-          </Link<Route>>
+             <a class={get_drawer_item_class("home")} onclick={on_click_home} aria-current="page">
+             <span class="mdc-list-item__ripple"></span>
+             <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"home"}</i>
+             <span class="mdc-list-item__text">{"Home"}</span>
+           </a>
+           <a class={get_drawer_item_class("task")} onclick={on_click_task}>
+             <span class="mdc-list-item__ripple"></span>
+             <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"task"}</i>
+             <span class="mdc-list-item__text">{"Tasks"}</span>
+           </a>
+           <a class={get_drawer_item_class("stats")} onclick={on_click_stats}>
+             <span class="mdc-list-item__ripple"></span>
+             <i class="material-icons mdc-list-item__graphic" aria-hidden="true">{"query_stats"}</i>
+             <span class="mdc-list-item__text">{"Stats"}</span>
+           </a>
 
 
           </nav>
