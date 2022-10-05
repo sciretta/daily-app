@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate rocket;
+use rocket::fs::{relative, FileServer};
 
 #[get("/")]
 fn index() -> &'static str {
@@ -10,10 +11,12 @@ fn index() -> &'static str {
 
 #[post("/new-task")]
 fn new_task() -> &'static str {
-    "new task"
+    "new task" 
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, new_task])
+    rocket::build()
+        .mount("/", FileServer::from(relative!("dist")))
+        .mount("/api", routes![index, new_task])
 }
