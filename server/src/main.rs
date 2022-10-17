@@ -7,7 +7,7 @@ use rocket::{
     fs::{relative, FileServer},
     serde::Deserialize,
 };
-use server::TaskType;
+use server::{verify_and_parse_input_record, ManageDatabase, TaskType};
 
 #[get("/")]
 fn index() -> &'static str {
@@ -18,20 +18,66 @@ fn index() -> &'static str {
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
-struct TaskInput {
+pub struct TaskInput {
     task_type: TaskType,
     date: Option<String>,
     week_days: Option<Vec<Weekday>>,
-    time: Option<u8>,
+    // time: Option<u8>,
     done: bool,
     name: String,
 }
 
 #[post("/new-task", data = "<data>")]
 fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
-    println!("{:?}", data);
-    let id = 1;
-    status::Accepted(Some(format!("id: '{}'", id)))
+    let mut lines = ManageDatabase::read_data();
+
+    // for line in lines.clone() {
+    //     if line.contains("id::name::type::date::week,days::done") {
+    //         continue;
+    //     }
+    //     verify_and_parse_input_record(line);
+    // }
+
+    let new_line: String = format!(
+        "{}::{}::{}::{}::{}::{}",
+        lines.len(),
+        data.name,
+        match data.task_type {
+            TaskType::HABIT => "HABIT",
+            TaskType::TODO => "TODO",
+        },
+        match &data.date {
+            Some(date) => date,
+            None => "null",
+        },
+        match &data.week_days {
+            Some(week_days) => week_days
+                .iter()
+                .map(|day| match day {
+                    Weekday::Mon => "MON".to_string(),
+                    Weekday::Tue => "TUE".to_string(),
+                    Weekday::Wed => "WED".to_string(),
+                    Weekday::Thu => "THU".to_string(),
+                    Weekday::Fri => "FRI".to_string(),
+                    Weekday::Sat => "SAT".to_string(),
+                    Weekday::Sun => "SUN".to_string(),
+                })
+                .collect::<Vec<String>>()
+                .join(","),
+            None => "null".to_string(),
+        },
+        data.done
+    );
+
+    lines.push(new_line);
+
+    let parsed_data: String = lines.join("\n");
+
+    print!("{:?}", parsed_data);
+
+    ManageDatabase::write_data(parsed_data);
+
+    status::Accepted(Some(format!("id: '{}'", 1)))
 }
 
 #[launch]
