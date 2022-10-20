@@ -1,20 +1,32 @@
 #[macro_use]
 extern crate rocket;
 use chrono::Weekday;
-use rocket::response::status;
+use rocket::http::Status;
+use rocket::response::content::RawJson;
+use rocket::response::{content, status};
 use rocket::serde::json::Json;
 use rocket::{
     fs::{relative, FileServer},
     serde::Deserialize,
 };
-use server::{verify_and_parse_input_record, ManageDatabase, TaskType};
+use server::{verify_and_parse_input_record, ManageDatabase, Task, TaskType};
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+#[get("/get_tasks")]
+fn get_tasks() -> status::Custom<RawJson<String>> {
+    let lines = ManageDatabase::read_data();
+    let mut tasks: Vec<Task> = vec![];
+
+    for line in lines.clone() {
+        if line.contains("id::name::type::date::week,days::done") {
+            continue;
+        }
+        tasks.push(verify_and_parse_input_record(line));
+    }
+
+    let serialized_user = serde_json::to_string(&tasks).unwrap();
+
+    status::Custom(Status::ImATeapot, content::RawJson(serialized_user))
 }
-
-// first we need to serve the static files and then we can create the api
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -78,16 +90,14 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
 
     let parsed_data: String = lines.join("\n");
 
-    print!("{:?}", parsed_data);
-
     ManageDatabase::write_data(parsed_data);
 
-    status::Accepted(Some(format!("id: '{}'", 1)))
+    status::Accepted(Some(format!("id: '{}'", lines.len() - 1)))
 }
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .mount("/", FileServer::from(relative!("dist")))
-        .mount("/api", routes![index, new_task])
+        .mount("/api", routes![get_tasks, new_task])
 }
