@@ -31,12 +31,15 @@ pub struct TaskInput {
 fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     let mut lines = ManageDatabase::read_data();
 
-    // for line in lines.clone() {
-    //     if line.contains("id::name::type::date::week,days::done") {
-    //         continue;
-    //     }
-    //     verify_and_parse_input_record(line);
-    // }
+    for line in lines.clone() {
+        if line.contains("id::name::type::date::week,days::done") {
+            continue;
+        }
+        let current_line = verify_and_parse_input_record(line);
+        if current_line.name == data.name {
+            panic!("This name is already in use")
+        }
+    }
 
     let new_line: String = format!(
         "{}::{}::{}::{}::{}::{}",
@@ -68,6 +71,8 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
         },
         data.done
     );
+
+    verify_and_parse_input_record(new_line.clone());
 
     lines.push(new_line);
 

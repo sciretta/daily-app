@@ -5,13 +5,13 @@ use std::io::{BufRead, BufReader, Write};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Task {
-    id: String,
-    task_type: TaskType,
-    date: Option<String>,
-    week_days: Option<Vec<Weekday>>,
+    pub id: String,
+    pub task_type: TaskType,
+    pub date: Option<String>,
+    pub week_days: Option<Vec<Weekday>>,
     // time: Option<u8>,
-    done: bool,
-    name: String,
+    pub done: bool,
+    pub name: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
