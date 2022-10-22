@@ -1,8 +1,4 @@
-use crate::{
-    // fake::generate_fake_tasks,
-    modules::shared::components::Checkbox,
-    Task,
-};
+use crate::{modules::shared::components::Checkbox, Task};
 use gloo::{self, console::log};
 use reqwasm::http::Request;
 use serde_json;
@@ -58,13 +54,6 @@ pub fn home() -> Html {
             (),
         );
     }
-
-    // let sorted_tasks = Task::sort_tasks_by_day(&generate_fake_tasks(10))
-    //     .into_iter()
-    //     .map(|group| DayCard {
-    //         day: group.0.clone(),
-    //         tasks: group.1.clone(),
-    //     });
 
     let sorted_tasks = Task::sort_tasks_by_day(&tasks)
         .into_iter()

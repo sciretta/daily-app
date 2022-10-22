@@ -14,7 +14,7 @@ use rocket::{
 use rocket::{Request, Response};
 use server::{verify_and_parse_input_record, ManageDatabase, Task, TaskType};
 
-#[get("/get_tasks")]
+#[get("/get-tasks")]
 fn get_tasks() -> status::Custom<RawJson<String>> {
     let lines = ManageDatabase::read_data();
     let mut tasks: Vec<Task> = vec![];

@@ -61,9 +61,14 @@ pub fn verify_and_parse_input_record(data: String) -> Task {
         }
     };
 
-    let date = NaiveDate::parse_from_str(task_data[3], "%Y-%m-%d")
-        .unwrap()
-        .to_string();
+    let date = match task_data[3] {
+        "null" => None,
+        _ => Some(
+            NaiveDate::parse_from_str(task_data[3], "%Y-%m-%d")
+                .unwrap()
+                .to_string(),
+        ),
+    };
 
     let mut parsed_week_days: Vec<Weekday> = vec![];
     if !task_data[4].contains("null") {
@@ -94,6 +99,6 @@ pub fn verify_and_parse_input_record(data: String) -> Task {
             _ => None,
         },
         done,
-        date: Some(date),
+        date: date,
     }
 }
