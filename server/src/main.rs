@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate rocket;
 use chrono::Weekday;
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::http::Header;
 use rocket::http::Status;
 use rocket::response::content::RawJson;
 use rocket::response::{content, status};
@@ -9,6 +11,7 @@ use rocket::{
     fs::{relative, FileServer},
     serde::Deserialize,
 };
+use rocket::{Request, Response};
 use server::{verify_and_parse_input_record, ManageDatabase, Task, TaskType};
 
 #[get("/get_tasks")]
@@ -25,7 +28,7 @@ fn get_tasks() -> status::Custom<RawJson<String>> {
 
     let serialized_user = serde_json::to_string(&tasks).unwrap();
 
-    status::Custom(Status::ImATeapot, content::RawJson(serialized_user))
+    status::Custom(Status::Accepted, content::RawJson(serialized_user))
 }
 
 #[derive(Deserialize, Debug)]
@@ -98,6 +101,29 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
 #[launch]
 fn rocket() -> _ {
     rocket::build()
+        .attach(Cors)
         .mount("/", FileServer::from(relative!("dist")))
         .mount("/api", routes![get_tasks, new_task])
+}
+
+pub struct Cors;
+
+#[rocket::async_trait]
+impl Fairing for Cors {
+    fn info(&self) -> Info {
+        Info {
+            name: "Cross-Origin-Resource-Sharing Fairing",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _request: &'r Request<'_>, response: &mut Response<'r>) {
+        response.set_header(Header::new("Access-Control-Allow-Origin", "*"));
+        response.set_header(Header::new(
+            "Access-Control-Allow-Methods",
+            "POST, PATCH, PUT, DELETE, HEAD, OPTIONS, GET",
+        ));
+        response.set_header(Header::new("Access-Control-Allow-Headers", "*"));
+        response.set_header(Header::new("Access-Control-Allow-Credentials", "true"));
+    }
 }
