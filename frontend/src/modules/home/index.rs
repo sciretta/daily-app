@@ -38,7 +38,7 @@ pub fn home() -> Html {
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    let response = Request::get("http://localhost:8000/api/get_tasks")
+                    let response = Request::get("http://localhost:8000/api/get-tasks")
                         .send()
                         .await
                         .unwrap()
