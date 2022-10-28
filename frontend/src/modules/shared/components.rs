@@ -1,5 +1,5 @@
 use crate::router::Route;
-use gloo::{self, console::log};
+use gloo;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -150,7 +150,7 @@ pub fn switch(props: &PropsSwitch) -> Html {
         let props_onchange = props.on_check.clone();
         let checked = checked.clone();
 
-        Callback::from(move |event: MouseEvent| {
+        Callback::from(move |_: MouseEvent| {
             checked.set(!*checked);
             props_onchange.emit(!*checked);
         })

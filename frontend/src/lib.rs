@@ -71,9 +71,10 @@ impl Task {
         let mut tasks_sorted: Vec<(String, Vec<Task>)> = Vec::new();
         let mut days: Vec<String> = Vec::new();
 
+        // add days in a vector of strings
         let mut was_today_added = false;
         for task in tasks {
-            if task.task_type == TaskType::HABIT {
+            if task.task_type != TaskType::TODO {
                 continue;
             }
             match &task.date {
@@ -91,6 +92,7 @@ impl Task {
             }
         }
 
+        // sort the days
         let mut days_sorted = days
             .clone()
             .iter()
