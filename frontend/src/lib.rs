@@ -75,6 +75,10 @@ impl Task {
         let mut was_today_added = false;
         for task in tasks {
             if task.task_type != TaskType::TODO {
+                if !was_today_added {
+                    days.push(Local::today().naive_local().to_string());
+                }
+                was_today_added = true;
                 continue;
             }
             match &task.date {

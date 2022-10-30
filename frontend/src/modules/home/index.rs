@@ -46,7 +46,7 @@ pub fn home() -> Html {
                         .await
                         .unwrap();
 
-                    log!(serde_json::to_string_pretty(&response).unwrap()); // DELETE THIS
+                    // log!(serde_json::to_string_pretty(&response).unwrap()); // DELETE THIS
                     tasks.set(response)
                 });
                 || ()
