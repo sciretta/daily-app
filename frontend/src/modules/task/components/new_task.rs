@@ -20,7 +20,7 @@ pub fn new_task() -> Html {
 
     let on_change_name = {
         let task_name = task_name.clone();
-        Callback::from(move |event: Event| {
+        Callback::from(move |event: InputEvent| {
             let value = event
                 .target()
                 .unwrap()
@@ -106,7 +106,7 @@ pub fn new_task() -> Html {
                        <span class="mdc-notched-outline__leading"></span>
                        <span class="mdc-notched-outline__trailing"></span>
                    </span>
-                   <input type="text" onchange={on_change_name} class="mdc-text-field__input" aria-labelledby="my-label-id"/>
+                   <input type="text" oninput ={on_change_name} class="mdc-text-field__input" aria-labelledby="my-label-id"/>
                    </label>
 
                    <div class="text-xl font-bold w-4/5" >{"Task type"}</div>
