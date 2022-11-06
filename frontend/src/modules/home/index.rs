@@ -2,6 +2,7 @@ use crate::{modules::shared::components::Checkbox, Task};
 use gloo::{self, console::log};
 use reqwasm::http::Request;
 use yew::prelude::*;
+use yew_hooks::prelude::*;
 
 struct DayCard {
     day: String,
@@ -20,6 +21,16 @@ impl DayCard {
                     let is_open = use_state(|| false);
                     let options_menu_class = if *is_open {"mdc-menu absolute right-0 z-10"} else{"mdc-menu mdc-menu-surface"};
 
+                    let node = use_node_ref();
+
+                    use_click_away(node.clone(), {
+                        let is_open = is_open.clone();
+                        move |_: Event| {
+                            if !(*is_open) {return;}
+                            is_open.set(false);
+                        }
+                    });
+
                     let edit_callback =  {
                         let task = task.clone();
                         Callback::from(move |_| {
@@ -36,37 +47,42 @@ impl DayCard {
 
 
                     html!{
-                    <div class="flex justify-between">
-                    <div class="flex center items-center">
-                    <Checkbox on_check={Callback::from(move |val|log!("test2",val,task.id.clone()))} />
+                        <div class="flex justify-between">
+                        <div class="flex center items-center">
+                        <Checkbox on_check={Callback::from(move |val|log!("test2",val,task.id.clone()))} />
 
-                    <span>{task.name}</span></div>
+                        <span>{task.name}</span></div>
 
-                    <div>
-                    <div class="mdc-button mdc-button--touch" onclick={ Callback::from(move |_| {
-                        is_open.set(!*is_open)
-                    })}>
-                        <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"more_horiz"}</i>
-                    </div>
-                    <div class={options_menu_class} >
+                        <div>
 
-                        <ul class="mdc-list mdc-card" role="menu" aria-hidden="true" aria-orientation="vertical" tabindex="-1">
-                            <li class="mdc-list-item p-4" role="menuitem" onclick={edit_callback}>
-                            <span class="mdc-list-item__ripple"></span>
-                            <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"edit"}</i>
-                            <span class="mdc-list-item__text">{"Edit"}</span>
-                            </li>
-                            <li class="mdc-list-item p-4" role="menuitem" onclick={delete_callback}>
-                            <span class="mdc-list-item__ripple"></span>
-                            <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"delete"}</i>
-                            <span class="mdc-list-item__text">{"Delete"}</span>
-                            </li>
-                        </ul>
+                        if !(*is_open) {
+                            <div class="mdc-button mdc-button--touch" onclick={ Callback::from(move |_| {
+                                if *is_open {return;}
+                                is_open.set(!*is_open)
+                            })}>
+                                <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"more_horiz"}</i>
+                            </div>
+                        }
+
+                        <div class={options_menu_class} ref={node}>
+
+                            <ul class="mdc-list mdc-card" role="menu" aria-hidden="true" aria-orientation="vertical" tabindex="-1">
+                                <li class="mdc-list-item p-4" role="menuitem" onclick={edit_callback}>
+                                <span class="mdc-list-item__ripple"></span>
+                                <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"edit"}</i>
+                                <span class="mdc-list-item__text">{"Edit"}</span>
+                                </li>
+                                <li class="mdc-list-item p-4" role="menuitem" onclick={delete_callback}>
+                                <span class="mdc-list-item__ripple"></span>
+                                <i class="material-icons mdc-list-item__graphic text-slate-500" aria-hidden="true">{"delete"}</i>
+                                <span class="mdc-list-item__text">{"Delete"}</span>
+                                </li>
+                            </ul>
+                            </div>
+                            </div>
+
                         </div>
-                        </div>
-
-                    </div>
-                 } }).collect::<Html>() }
+                        } }).collect::<Html>() }
             </div>
         }
     }

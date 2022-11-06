@@ -18,3 +18,4 @@ rand = "0.8.5"
 getrandom = { version = "0.2", features = ["js"] }
 wasm-bindgen-futures = "0.4.29"
 reqwasm = "0.5.0"
+yew-hooks="0.1.56"
