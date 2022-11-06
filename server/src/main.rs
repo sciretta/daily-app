@@ -98,12 +98,91 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     status::Accepted(Some(format!("id: '{}'", lines.len() - 1)))
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(crate = "rocket::serde")]
+pub struct DeleteTask {
+    id: u8,
+}
+
+#[post("/delete-task", data = "<data>")]
+fn delete_task(data: Json<DeleteTask>) -> status::Accepted<String> {
+    println!("{:?}", data);
+
+    let lines = ManageDatabase::read_data();
+    let mut db_tasks: Vec<Task> = vec![];
+
+    let mut line_to_delete_exists = false;
+    for line in lines.clone() {
+        if line.contains("id::name::type::date::week,days::done") {
+            continue;
+        }
+        let current_line = verify_and_parse_input_record(line);
+        if current_line.id == data.id.to_string() {
+            line_to_delete_exists = true;
+        }
+        db_tasks.push(current_line);
+    }
+    if !line_to_delete_exists {
+        panic!("This task does not exist");
+    }
+
+    let mut lines_updated: Vec<String> =
+        vec![String::from("id::name::type::date::week,days::done")];
+
+    for current_task in db_tasks {
+        let mut new_line: String = String::from("");
+
+        if current_task.id.parse::<u8>().unwrap() != data.id {
+            new_line = format!(
+                "{}::{}::{}::{}::{}::{}",
+                lines_updated.len(),
+                current_task.name,
+                match current_task.task_type {
+                    TaskType::HABIT => "HABIT",
+                    TaskType::TODO => "TODO",
+                },
+                match &current_task.date {
+                    Some(date) => date,
+                    None => "null",
+                },
+                match &current_task.week_days {
+                    Some(week_days) => week_days
+                        .iter()
+                        .map(|day| match day {
+                            Weekday::Mon => "MON".to_string(),
+                            Weekday::Tue => "TUE".to_string(),
+                            Weekday::Wed => "WED".to_string(),
+                            Weekday::Thu => "THU".to_string(),
+                            Weekday::Fri => "FRI".to_string(),
+                            Weekday::Sat => "SAT".to_string(),
+                            Weekday::Sun => "SUN".to_string(),
+                        })
+                        .collect::<Vec<String>>()
+                        .join(","),
+                    None => "null".to_string(),
+                },
+                current_task.done
+            );
+        } else {
+            continue;
+        }
+        verify_and_parse_input_record(new_line.clone());
+        lines_updated.push(new_line);
+    }
+
+    let parsed_data: String = lines_updated.join("\n");
+
+    ManageDatabase::write_data(parsed_data);
+
+    status::Accepted(Some(format!("Task deleted: '{}'", data.id)))
+}
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
         .attach(Cors)
         .mount("/", FileServer::from(relative!("dist")))
-        .mount("/api", routes![get_tasks, new_task])
+        .mount("/api", routes![get_tasks, new_task, delete_task])
 }
 
 pub struct Cors;

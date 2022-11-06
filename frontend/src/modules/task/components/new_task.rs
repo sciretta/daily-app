@@ -65,7 +65,7 @@ pub fn new_task() -> Html {
         let task_date = task_date.clone();
         let selected_week_days = selected_week_days.clone();
         Callback::from(move |_: MouseEvent| {
-            let test_data = json!({
+            let data = json!({
               "task_type": task_type.to_string(),
               "date": if task_date.len() == 0 {None}else{Some((*task_date).clone())},
               "week_days": if (*task_type) == TaskType::HABIT {Some(selected_week_days.iter().map(|val|val.to_string()).collect::<Vec<String>>())} else {None},
@@ -75,7 +75,7 @@ pub fn new_task() -> Html {
             wasm_bindgen_futures::spawn_local(async move {
                 Request::post("http://localhost:8000/api/new-task")
                     // .header("Content-Type", "application/json")
-                    .body(test_data.to_string())
+                    .body(data.to_string())
                     .send()
                     .await
                     .unwrap()

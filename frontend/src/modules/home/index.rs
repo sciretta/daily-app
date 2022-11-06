@@ -1,6 +1,7 @@
 use crate::{modules::shared::components::Checkbox, Task};
 use gloo::{self, console::log};
 use reqwasm::http::Request;
+use serde_json::json;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
@@ -40,8 +41,23 @@ impl DayCard {
 
                     let delete_callback =  {
                         let task = task.clone();
+                        let is_open = is_open.clone();
                         Callback::from(move |_| {
-                            log!("delete task",serde_json::to_string_pretty(&task.id).unwrap());
+                            if !(*is_open) {return;}
+                            let data = json!({
+                                "id": task.id.parse::<u8>().unwrap()
+                              });
+                              wasm_bindgen_futures::spawn_local(async move {
+                                  Request::post("http://localhost:8000/api/delete-task")
+                                      // .header("Content-Type", "application/json")
+                                      .body(data.to_string())
+                                      .send()
+                                      .await
+                                      .unwrap()
+                                      .json::<Task>()
+                                      .await
+                                      .unwrap();
+                              });
                         })
                     };
 
