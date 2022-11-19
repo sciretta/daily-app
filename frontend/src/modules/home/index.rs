@@ -11,7 +11,11 @@ struct DayCard {
 }
 
 impl DayCard {
-    fn view(&self) -> Html {
+    fn view(
+        &self,
+        get_tasks: fn(tasks: UseStateHandle<Vec<Task>>),
+        tasks_state: UseStateHandle<Vec<Task>>,
+    ) -> Html {
         let tasks = self.tasks.clone();
 
         html! {
@@ -42,6 +46,7 @@ impl DayCard {
                     let delete_callback =  {
                         let task = task.clone();
                         let is_open = is_open.clone();
+                        let tasks_state = tasks_state.clone();
                         Callback::from(move |_| {
                             if !(*is_open) {return;}
                             let data = json!({
@@ -58,6 +63,7 @@ impl DayCard {
                                       .await
                                       .unwrap();
                               });
+                              get_tasks(tasks_state.clone());
                         })
                     };
 
@@ -108,22 +114,26 @@ impl DayCard {
 pub fn home() -> Html {
     let tasks = use_state(|| vec![]);
 
+    fn get_tasks(tasks: UseStateHandle<Vec<Task>>) {
+        wasm_bindgen_futures::spawn_local(async move {
+            let response = Request::get("http://localhost:8000/api/get-tasks")
+                .send()
+                .await
+                .unwrap()
+                .json::<Vec<Task>>()
+                .await
+                .unwrap();
+
+            // log!(serde_json::to_string_pretty(&response).unwrap()); // DELETE THIS
+            tasks.set(response)
+        });
+    }
+
     {
         let tasks = tasks.clone();
         use_effect_with_deps(
             move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    let response = Request::get("http://localhost:8000/api/get-tasks")
-                        .send()
-                        .await
-                        .unwrap()
-                        .json::<Vec<Task>>()
-                        .await
-                        .unwrap();
-
-                    // log!(serde_json::to_string_pretty(&response).unwrap()); // DELETE THIS
-                    tasks.set(response)
-                });
+                get_tasks(tasks);
                 || ()
             },
             (),
@@ -139,7 +149,7 @@ pub fn home() -> Html {
 
     html! {
         <div class="view-container">
-            { sorted_tasks.map(|card|card.view()).collect::<Html>() }
+            { sorted_tasks.map(|card|card.view(get_tasks,tasks.clone())).collect::<Html>() }
         </div>
     }
 }
