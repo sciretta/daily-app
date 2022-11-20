@@ -1,9 +1,10 @@
-use crate::{modules::shared::components::Checkbox, Task};
+use crate::{modules::shared::components::Checkbox, router::Route, Task};
 use gloo::{self, console::log};
 use reqwasm::http::Request;
 use serde_json::json;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
+use yew_router::prelude::*;
 
 struct DayCard {
     day: String,
@@ -17,6 +18,7 @@ impl DayCard {
         tasks_state: UseStateHandle<Vec<Task>>,
     ) -> Html {
         let tasks = self.tasks.clone();
+        let history = use_history().unwrap();
 
         html! {
             <div class="mdc-card p-6 mb-1 w-full">
@@ -38,8 +40,15 @@ impl DayCard {
 
                     let edit_callback =  {
                         let task = task.clone();
+                        let history = history.clone();
                         Callback::from(move |_| {
                             log!("edit task",serde_json::to_string_pretty(&task.id).unwrap());
+                            history.push(
+                                Route::Task {
+                                    id: (&task.id).clone(),
+                                }
+                                .clone(),
+                            )
                         })
                     };
 
