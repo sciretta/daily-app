@@ -14,6 +14,12 @@ use rocket::{
 use rocket::{Request, Response};
 use server::{verify_and_parse_input_record, ManageDatabase, Task, TaskType};
 
+#[derive(Deserialize, Debug)]
+#[serde(crate = "rocket::serde")]
+pub struct SelectedTask {
+    id: u8,
+}
+
 #[get("/get-tasks")]
 fn get_tasks() -> status::Custom<RawJson<String>> {
     let lines = ManageDatabase::read_data();
@@ -26,9 +32,27 @@ fn get_tasks() -> status::Custom<RawJson<String>> {
         tasks.push(verify_and_parse_input_record(line));
     }
 
-    let serialized_user = serde_json::to_string(&tasks).unwrap();
+    let serialized_tasks = serde_json::to_string(&tasks).unwrap();
 
-    status::Custom(Status::Accepted, content::RawJson(serialized_user))
+    status::Custom(Status::Accepted, content::RawJson(serialized_tasks))
+}
+
+#[post("/get-task", data = "<data>")]
+fn get_task(data: Json<SelectedTask>) -> status::Custom<RawJson<String>> {
+    println!("{:?}", data);
+    let lines = ManageDatabase::read_data();
+    let mut tasks: Vec<Task> = vec![];
+
+    for line in lines.clone() {
+        if line.contains("id::name::type::date::week,days::done") {
+            continue;
+        }
+        tasks.push(verify_and_parse_input_record(line));
+    }
+
+    let serialized_task = serde_json::to_string(&tasks[usize::from(data.id - 1)]).unwrap();
+
+    status::Custom(Status::Accepted, content::RawJson(serialized_task))
 }
 
 #[derive(Deserialize, Debug)]
@@ -98,14 +122,8 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     status::Accepted(Some(format!("id: '{}'", lines.len() - 1)))
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(crate = "rocket::serde")]
-pub struct DeleteTask {
-    id: u8,
-}
-
 #[post("/delete-task", data = "<data>")]
-fn delete_task(data: Json<DeleteTask>) -> status::Accepted<String> {
+fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
     println!("{:?}", data);
 
     let lines = ManageDatabase::read_data();
@@ -182,7 +200,7 @@ fn rocket() -> _ {
     rocket::build()
         .attach(Cors)
         .mount("/", FileServer::from(relative!("dist")))
-        .mount("/api", routes![get_tasks, new_task, delete_task])
+        .mount("/api", routes![get_tasks, new_task, delete_task, get_task])
 }
 
 pub struct Cors;

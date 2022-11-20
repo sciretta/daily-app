@@ -42,7 +42,6 @@ impl DayCard {
                         let task = task.clone();
                         let history = history.clone();
                         Callback::from(move |_| {
-                            log!("edit task",serde_json::to_string_pretty(&task.id).unwrap());
                             history.push(
                                 Route::Task {
                                     id: (&task.id).clone(),
