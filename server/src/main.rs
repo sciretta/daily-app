@@ -62,8 +62,84 @@ pub struct TaskInput {
     date: Option<String>,
     week_days: Option<Vec<Weekday>>,
     // time: Option<u8>,
+    id: Option<u8>,
     done: bool,
     name: String,
+}
+
+#[post("/update-task", data = "<data>")]
+fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
+    let lines = ManageDatabase::read_data();
+    let mut tasks: Vec<Task> = vec![];
+
+    println!("{}", data.id.unwrap());
+
+    for line in lines.clone() {
+        if line.contains("id::name::type::date::week,days::done") {
+            continue;
+        }
+        let current_task = verify_and_parse_input_record(line);
+        if current_task.name == data.name && current_task.id != data.id.unwrap().to_string() {
+            panic!("This name is already in use")
+        }
+        tasks.push(current_task);
+    }
+
+    tasks[usize::from(data.id.unwrap() - 1)].name = data.name.clone();
+    tasks[usize::from(data.id.unwrap() - 1)].task_type = data.task_type.clone();
+    tasks[usize::from(data.id.unwrap() - 1)].done = data.done.clone();
+    if tasks[usize::from(data.id.unwrap() - 1)].date.is_some() {
+        tasks[usize::from(data.id.unwrap() - 1)].date = data.date.clone();
+    }
+    if tasks[usize::from(data.id.unwrap() - 1)].week_days.is_some() {
+        tasks[usize::from(data.id.unwrap() - 1)].week_days = data.week_days.clone();
+    }
+
+    let mut lines_updated: Vec<String> =
+        vec![String::from("id::name::type::date::week,days::done")];
+
+    for current_task in tasks {
+        let mut new_line: String = String::from("");
+
+        new_line = format!(
+            "{}::{}::{}::{}::{}::{}",
+            lines_updated.len(),
+            current_task.name,
+            match current_task.task_type {
+                TaskType::HABIT => "HABIT",
+                TaskType::TODO => "TODO",
+            },
+            match &current_task.date {
+                Some(date) => date,
+                None => "null",
+            },
+            match &current_task.week_days {
+                Some(week_days) => week_days
+                    .iter()
+                    .map(|day| match day {
+                        Weekday::Mon => "MON".to_string(),
+                        Weekday::Tue => "TUE".to_string(),
+                        Weekday::Wed => "WED".to_string(),
+                        Weekday::Thu => "THU".to_string(),
+                        Weekday::Fri => "FRI".to_string(),
+                        Weekday::Sat => "SAT".to_string(),
+                        Weekday::Sun => "SUN".to_string(),
+                    })
+                    .collect::<Vec<String>>()
+                    .join(","),
+                None => "null".to_string(),
+            },
+            current_task.done
+        );
+        verify_and_parse_input_record(new_line.clone());
+        lines_updated.push(new_line);
+    }
+
+    let parsed_data: String = lines_updated.join("\n");
+
+    ManageDatabase::write_data(parsed_data);
+
+    status::Accepted(Some(format!("id: '{}'", data.id.unwrap())))
 }
 
 #[post("/new-task", data = "<data>")]
@@ -200,7 +276,10 @@ fn rocket() -> _ {
     rocket::build()
         .attach(Cors)
         .mount("/", FileServer::from(relative!("dist")))
-        .mount("/api", routes![get_tasks, new_task, delete_task, get_task])
+        .mount(
+            "/api",
+            routes![get_tasks, new_task, delete_task, get_task, update_task],
+        )
 }
 
 pub struct Cors;
