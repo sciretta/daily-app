@@ -88,10 +88,10 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
     tasks[usize::from(data.id.unwrap() - 1)].name = data.name.clone();
     tasks[usize::from(data.id.unwrap() - 1)].task_type = data.task_type.clone();
     tasks[usize::from(data.id.unwrap() - 1)].done = data.done.clone();
-    if tasks[usize::from(data.id.unwrap() - 1)].date.is_some() {
+    if data.date.is_some() {
         tasks[usize::from(data.id.unwrap() - 1)].date = data.date.clone();
     }
-    if tasks[usize::from(data.id.unwrap() - 1)].week_days.is_some() {
+    if data.week_days.is_some() {
         tasks[usize::from(data.id.unwrap() - 1)].week_days = data.week_days.clone();
     }
 
