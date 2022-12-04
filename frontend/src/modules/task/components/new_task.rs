@@ -1,5 +1,6 @@
 use crate::{
     modules::shared::components::{Checkbox, Switch},
+    router::Route,
     Task, TaskType,
 };
 use chrono::Weekday::{self, Fri, Mon, Sat, Sun, Thu, Tue, Wed};
@@ -8,6 +9,7 @@ use serde_json::{self, json};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
 #[function_component(NewTask)]
 pub fn new_task() -> Html {
@@ -17,6 +19,8 @@ pub fn new_task() -> Html {
     let task_date = use_state(|| String::from(""));
     let selected_week_days = use_state(|| vec![Mon]);
     let can_save = use_state(|| false);
+
+    let history = use_history().unwrap();
 
     let on_change_name = {
         let task_name = task_name.clone();
@@ -72,16 +76,16 @@ pub fn new_task() -> Html {
               "done": false,
               "name": *task_name
             });
+            let history = history.clone();
             wasm_bindgen_futures::spawn_local(async move {
                 Request::post("http://localhost:8000/api/new-task")
                     // .header("Content-Type", "application/json")
                     .body(data.to_string())
                     .send()
                     .await
-                    .unwrap()
-                    .json::<Task>()
-                    .await
                     .unwrap();
+
+                history.push(Route::Home.clone())
             });
         })
     };
