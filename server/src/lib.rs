@@ -10,7 +10,6 @@ pub struct Task {
     pub date: Option<String>,
     pub week_days: Option<Vec<Weekday>>,
     // time: Option<u8>,
-    pub done: bool,
     pub name: String,
 }
 
@@ -53,13 +52,6 @@ pub fn verify_and_parse_input_record(data: String) -> Task {
             panic!("Invalid task type value")
         }
     };
-    let done = match task_data[5] {
-        "true" => true,
-        "false" => false,
-        _ => {
-            panic!("Invalid task done value")
-        }
-    };
 
     let date = match task_data[3] {
         "null" => None,
@@ -98,7 +90,6 @@ pub fn verify_and_parse_input_record(data: String) -> Task {
             d if d > 0 => Some(parsed_week_days),
             _ => None,
         },
-        done,
         date: date,
     }
 }

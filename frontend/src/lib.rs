@@ -38,7 +38,6 @@ pub struct Task {
     date: Option<String>,
     week_days: Option<Vec<Weekday>>,
     time: Option<u8>,
-    done: bool,
     name: String,
 }
 
@@ -50,7 +49,6 @@ impl Task {
             date: Option::None,
             week_days: Some(week_days),
             time: Option::None,
-            done: false,
             name,
         }
     }
@@ -62,7 +60,6 @@ impl Task {
             date,
             week_days: Option::None,
             time: Option::None,
-            done: false,
             name,
         }
     }

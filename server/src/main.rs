@@ -26,7 +26,7 @@ fn get_tasks() -> status::Custom<RawJson<String>> {
     let mut tasks: Vec<Task> = vec![];
 
     for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days::done") {
+        if line.contains("id::name::type::date::week,days") {
             continue;
         }
         tasks.push(verify_and_parse_input_record(line));
@@ -44,7 +44,7 @@ fn get_task(data: Json<SelectedTask>) -> status::Custom<RawJson<String>> {
     let mut tasks: Vec<Task> = vec![];
 
     for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days::done") {
+        if line.contains("id::name::type::date::week,days") {
             continue;
         }
         tasks.push(verify_and_parse_input_record(line));
@@ -63,7 +63,6 @@ pub struct TaskInput {
     week_days: Option<Vec<Weekday>>,
     // time: Option<u8>,
     id: Option<u8>,
-    done: bool,
     name: String,
 }
 
@@ -75,7 +74,7 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
     println!("{}", data.id.unwrap());
 
     for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days::done") {
+        if line.contains("id::name::type::date::week,days") {
             continue;
         }
         let current_task = verify_and_parse_input_record(line);
@@ -87,20 +86,18 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
 
     tasks[usize::from(data.id.unwrap() - 1)].name = data.name.clone();
     tasks[usize::from(data.id.unwrap() - 1)].task_type = data.task_type.clone();
-    tasks[usize::from(data.id.unwrap() - 1)].done = data.done.clone();
     tasks[usize::from(data.id.unwrap() - 1)].date = data.date.clone();
     if data.week_days.is_some() {
         tasks[usize::from(data.id.unwrap() - 1)].week_days = data.week_days.clone();
     }
 
-    let mut lines_updated: Vec<String> =
-        vec![String::from("id::name::type::date::week,days::done")];
+    let mut lines_updated: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
     for current_task in tasks {
         let mut new_line: String = String::from("");
 
         new_line = format!(
-            "{}::{}::{}::{}::{}::{}",
+            "{}::{}::{}::{}::{}",
             lines_updated.len(),
             current_task.name,
             match current_task.task_type {
@@ -126,8 +123,7 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
                     .collect::<Vec<String>>()
                     .join(","),
                 None => "null".to_string(),
-            },
-            current_task.done
+            }
         );
         verify_and_parse_input_record(new_line.clone());
         lines_updated.push(new_line);
@@ -145,7 +141,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     let mut lines = ManageDatabase::read_data();
 
     for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days::done") {
+        if line.contains("id::name::type::date::week,days") {
             continue;
         }
         let current_line = verify_and_parse_input_record(line);
@@ -155,7 +151,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     }
 
     let new_line: String = format!(
-        "{}::{}::{}::{}::{}::{}",
+        "{}::{}::{}::{}::{}",
         lines.len(),
         data.name,
         match data.task_type {
@@ -181,8 +177,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
                 .collect::<Vec<String>>()
                 .join(","),
             None => "null".to_string(),
-        },
-        data.done
+        }
     );
 
     verify_and_parse_input_record(new_line.clone());
@@ -205,7 +200,7 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
 
     let mut line_to_delete_exists = false;
     for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days::done") {
+        if line.contains("id::name::type::date::week,days") {
             continue;
         }
         let current_line = verify_and_parse_input_record(line);
@@ -218,15 +213,14 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
         panic!("This task does not exist");
     }
 
-    let mut lines_updated: Vec<String> =
-        vec![String::from("id::name::type::date::week,days::done")];
+    let mut lines_updated: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
     for current_task in db_tasks {
         let mut new_line: String = String::from("");
 
         if current_task.id.parse::<u8>().unwrap() != data.id {
             new_line = format!(
-                "{}::{}::{}::{}::{}::{}",
+                "{}::{}::{}::{}::{}",
                 lines_updated.len(),
                 current_task.name,
                 match current_task.task_type {
@@ -252,8 +246,7 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
                         .collect::<Vec<String>>()
                         .join(","),
                     None => "null".to_string(),
-                },
-                current_task.done
+                }
             );
         } else {
             continue;

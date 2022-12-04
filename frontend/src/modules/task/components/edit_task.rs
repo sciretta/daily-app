@@ -124,7 +124,6 @@ pub fn edit_task(props: &Props) -> Html {
               "task_type": task_type.to_string(),
               "date": if task_date.len() == 0 || !(*have_date) {None}else{Some((*task_date).clone())},
               "week_days": if (*task_type) == TaskType::HABIT {Some(selected_week_days.iter().map(|val|val.to_string()).collect::<Vec<String>>())} else {None},
-              "done": false,
               "name": *task_name,
               "id":id.clone()
             });
