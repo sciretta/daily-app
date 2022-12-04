@@ -156,6 +156,18 @@ pub fn switch(props: &PropsSwitch) -> Html {
         })
     };
 
+    {
+        let checked = checked.clone();
+        let default_value = props.default_checked.clone();
+        use_effect_with_deps(
+            move |_| {
+                checked.set(default_value);
+                || ()
+            },
+            (props.default_checked.clone()),
+        );
+    }
+
     html! {
       <button onclick={onchange} id="basic-switch" class={get_checked_class(*checked)} type="button" role="switch" aria-checked="false">
       <div class="mdc-switch__track"></div>
