@@ -115,13 +115,14 @@ pub fn edit_task(props: &Props) -> Html {
         let task_name = task_name.clone();
         let task_type = task_type.clone();
         let task_date = task_date.clone();
+        let have_date = have_date.clone();
         let selected_week_days = selected_week_days.clone();
         let id = props.id.clone().parse::<u8>().unwrap();
 
         Callback::from(move |_: MouseEvent| {
             let data = json!({
               "task_type": task_type.to_string(),
-              "date": if task_date.len() == 0 {None}else{Some((*task_date).clone())},
+              "date": if task_date.len() == 0 || !(*have_date) {None}else{Some((*task_date).clone())},
               "week_days": if (*task_type) == TaskType::HABIT {Some(selected_week_days.iter().map(|val|val.to_string()).collect::<Vec<String>>())} else {None},
               "done": false,
               "name": *task_name,
