@@ -1,2 +1,2 @@
 id::name::type::date::week,days
-1::test 2::HABIT::null::MON
+1::test 2*::TODO::2022-12-06::MON

@@ -72,37 +72,15 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
     let mut lines_updated: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
     for current_task in tasks {
-        let mut new_line: String = String::from("");
+        let new_task: Task = Task {
+            name: current_task.name,
+            id: lines_updated.len().to_string(),
+            date: current_task.date,
+            task_type: current_task.task_type,
+            week_days: current_task.week_days,
+        };
+        let new_line = parse_task_to_string(new_task);
 
-        new_line = format!(
-            "{}::{}::{}::{}::{}",
-            lines_updated.len(),
-            current_task.name,
-            match current_task.task_type {
-                TaskType::HABIT => "HABIT",
-                TaskType::TODO => "TODO",
-            },
-            match &current_task.date {
-                Some(date) => date,
-                None => "null",
-            },
-            match &current_task.week_days {
-                Some(week_days) => week_days
-                    .iter()
-                    .map(|day| match day {
-                        Weekday::Mon => "MON".to_string(),
-                        Weekday::Tue => "TUE".to_string(),
-                        Weekday::Wed => "WED".to_string(),
-                        Weekday::Thu => "THU".to_string(),
-                        Weekday::Fri => "FRI".to_string(),
-                        Weekday::Sat => "SAT".to_string(),
-                        Weekday::Sun => "SUN".to_string(),
-                    })
-                    .collect::<Vec<String>>()
-                    .join(","),
-                None => "null".to_string(),
-            }
-        );
         verify_and_parse_input_record(new_line.clone());
         lines_updated.push(new_line);
     }
