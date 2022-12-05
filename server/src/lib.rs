@@ -9,7 +9,7 @@ pub struct Task {
     pub task_type: TaskType,
     pub date: Option<String>,
     pub week_days: Option<Vec<Weekday>>,
-    // time: Option<u8>,
+    // pub done: bool ***ADD THIS LINE TO SEND DONE***
     pub name: String,
 }
 
@@ -22,21 +22,29 @@ pub enum TaskType {
 pub struct ManageDatabase {}
 
 impl ManageDatabase {
-    pub fn read_data() -> Vec<String> {
-        let input = File::open("db.txt").unwrap();
+    pub fn read_data() -> Vec<Task> {
+        let input = File::open("tasks.txt").unwrap();
         let buffered = BufReader::new(input);
-
         let mut lines: Vec<String> = vec![];
 
         for line in buffered.lines() {
             lines.push(line.unwrap().to_string());
         }
 
-        lines
+        let mut tasks: Vec<Task> = vec![];
+
+        for line in lines.clone() {
+            if line.contains("id::name::type::date::week,days") {
+                continue;
+            }
+            tasks.push(verify_and_parse_input_record(line));
+        }
+
+        tasks
     }
 
     pub fn write_data(data: String) {
-        let mut output = File::create("db.txt").unwrap();
+        let mut output = File::create("tasks.txt").unwrap();
         write!(output, "{}", data).unwrap();
     }
 }
@@ -90,6 +98,39 @@ pub fn verify_and_parse_input_record(data: String) -> Task {
             d if d > 0 => Some(parsed_week_days),
             _ => None,
         },
+        // ***SEARCH DONE VALUE IN stats.txt FILE AND SEND HERE***
         date: date,
     }
+}
+
+pub fn parse_task_to_string(data: Task) -> String {
+    format!(
+        "{}::{}::{}::{}::{}",
+        data.id,
+        data.name,
+        match data.task_type {
+            TaskType::HABIT => "HABIT",
+            TaskType::TODO => "TODO",
+        },
+        match &data.date {
+            Some(date) => date,
+            None => "null",
+        },
+        match &data.week_days {
+            Some(week_days) => week_days
+                .iter()
+                .map(|day| match day {
+                    Weekday::Mon => "MON".to_string(),
+                    Weekday::Tue => "TUE".to_string(),
+                    Weekday::Wed => "WED".to_string(),
+                    Weekday::Thu => "THU".to_string(),
+                    Weekday::Fri => "FRI".to_string(),
+                    Weekday::Sat => "SAT".to_string(),
+                    Weekday::Sun => "SUN".to_string(),
+                })
+                .collect::<Vec<String>>()
+                .join(","),
+            None => "null".to_string(),
+        }
+    )
 }

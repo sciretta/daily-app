@@ -12,7 +12,7 @@ use rocket::{
     serde::Deserialize,
 };
 use rocket::{Request, Response};
-use server::{verify_and_parse_input_record, ManageDatabase, Task, TaskType};
+use server::{parse_task_to_string, verify_and_parse_input_record, ManageDatabase, Task, TaskType};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -22,15 +22,7 @@ pub struct SelectedTask {
 
 #[get("/get-tasks")]
 fn get_tasks() -> status::Custom<RawJson<String>> {
-    let lines = ManageDatabase::read_data();
-    let mut tasks: Vec<Task> = vec![];
-
-    for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days") {
-            continue;
-        }
-        tasks.push(verify_and_parse_input_record(line));
-    }
+    let tasks = ManageDatabase::read_data();
 
     let serialized_tasks = serde_json::to_string(&tasks).unwrap();
 
@@ -40,15 +32,7 @@ fn get_tasks() -> status::Custom<RawJson<String>> {
 #[post("/get-task", data = "<data>")]
 fn get_task(data: Json<SelectedTask>) -> status::Custom<RawJson<String>> {
     println!("{:?}", data);
-    let lines = ManageDatabase::read_data();
-    let mut tasks: Vec<Task> = vec![];
-
-    for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days") {
-            continue;
-        }
-        tasks.push(verify_and_parse_input_record(line));
-    }
+    let tasks = ManageDatabase::read_data();
 
     let serialized_task = serde_json::to_string(&tasks[usize::from(data.id - 1)]).unwrap();
 
@@ -68,20 +52,14 @@ pub struct TaskInput {
 
 #[post("/update-task", data = "<data>")]
 fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
-    let lines = ManageDatabase::read_data();
-    let mut tasks: Vec<Task> = vec![];
+    let mut tasks = ManageDatabase::read_data();
 
     println!("{}", data.id.unwrap());
 
-    for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days") {
-            continue;
-        }
-        let current_task = verify_and_parse_input_record(line);
-        if current_task.name == data.name && current_task.id != data.id.unwrap().to_string() {
+    for task in tasks.clone() {
+        if task.name == data.name && task.id != data.id.unwrap().to_string() {
             panic!("This name is already in use")
         }
-        tasks.push(current_task);
     }
 
     tasks[usize::from(data.id.unwrap() - 1)].name = data.name.clone();
@@ -138,51 +116,28 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
 
 #[post("/new-task", data = "<data>")]
 fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
-    let mut lines = ManageDatabase::read_data();
+    let tasks = ManageDatabase::read_data();
+    let mut lines: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
-    for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days") {
-            continue;
-        }
-        let current_line = verify_and_parse_input_record(line);
-        if current_line.name == data.name {
+    for task in tasks.clone() {
+        if task.name == data.name {
             panic!("This name is already in use")
         }
+        lines.push(parse_task_to_string(task));
     }
 
-    let new_line: String = format!(
-        "{}::{}::{}::{}::{}",
-        lines.len(),
-        data.name,
-        match data.task_type {
-            TaskType::HABIT => "HABIT",
-            TaskType::TODO => "TODO",
-        },
-        match &data.date {
-            Some(date) => date,
-            None => "null",
-        },
-        match &data.week_days {
-            Some(week_days) => week_days
-                .iter()
-                .map(|day| match day {
-                    Weekday::Mon => "MON".to_string(),
-                    Weekday::Tue => "TUE".to_string(),
-                    Weekday::Wed => "WED".to_string(),
-                    Weekday::Thu => "THU".to_string(),
-                    Weekday::Fri => "FRI".to_string(),
-                    Weekday::Sat => "SAT".to_string(),
-                    Weekday::Sun => "SUN".to_string(),
-                })
-                .collect::<Vec<String>>()
-                .join(","),
-            None => "null".to_string(),
-        }
-    );
+    let new_task: Task = Task {
+        name: data.name.clone(),
+        id: (tasks.len() + 1).to_string(),
+        date: data.date.clone(),
+        task_type: data.task_type.clone(),
+        week_days: data.week_days.clone(),
+    };
+    let line_to_add = parse_task_to_string(new_task);
 
-    verify_and_parse_input_record(new_line.clone());
+    verify_and_parse_input_record(line_to_add.clone());
 
-    lines.push(new_line);
+    lines.push(line_to_add);
 
     let parsed_data: String = lines.join("\n");
 
@@ -195,19 +150,15 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
 fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
     println!("{:?}", data);
 
-    let lines = ManageDatabase::read_data();
+    let tasks = ManageDatabase::read_data();
     let mut db_tasks: Vec<Task> = vec![];
 
     let mut line_to_delete_exists = false;
-    for line in lines.clone() {
-        if line.contains("id::name::type::date::week,days") {
-            continue;
-        }
-        let current_line = verify_and_parse_input_record(line);
-        if current_line.id == data.id.to_string() {
+    for task in tasks.clone() {
+        if task.id == data.id.to_string() {
             line_to_delete_exists = true;
         }
-        db_tasks.push(current_line);
+        db_tasks.push(task);
     }
     if !line_to_delete_exists {
         panic!("This task does not exist");
@@ -219,35 +170,14 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
         let mut new_line: String = String::from("");
 
         if current_task.id.parse::<u8>().unwrap() != data.id {
-            new_line = format!(
-                "{}::{}::{}::{}::{}",
-                lines_updated.len(),
-                current_task.name,
-                match current_task.task_type {
-                    TaskType::HABIT => "HABIT",
-                    TaskType::TODO => "TODO",
-                },
-                match &current_task.date {
-                    Some(date) => date,
-                    None => "null",
-                },
-                match &current_task.week_days {
-                    Some(week_days) => week_days
-                        .iter()
-                        .map(|day| match day {
-                            Weekday::Mon => "MON".to_string(),
-                            Weekday::Tue => "TUE".to_string(),
-                            Weekday::Wed => "WED".to_string(),
-                            Weekday::Thu => "THU".to_string(),
-                            Weekday::Fri => "FRI".to_string(),
-                            Weekday::Sat => "SAT".to_string(),
-                            Weekday::Sun => "SUN".to_string(),
-                        })
-                        .collect::<Vec<String>>()
-                        .join(","),
-                    None => "null".to_string(),
-                }
-            );
+            let new_task: Task = Task {
+                name: current_task.name,
+                id: lines_updated.len().to_string(),
+                date: current_task.date,
+                task_type: current_task.task_type,
+                week_days: current_task.week_days,
+            };
+            new_line = parse_task_to_string(new_task);
         } else {
             continue;
         }
