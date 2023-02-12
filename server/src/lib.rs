@@ -9,7 +9,7 @@ pub enum TaskType {
     HABIT,
 }
 
-pub trait DB_Record {
+pub trait DbRecord {
     fn to_string(&self) -> String;
 
     fn string_to_record(data: String) -> Self;
@@ -17,6 +17,54 @@ pub trait DB_Record {
     fn get_id(&self) -> String;
 
     fn get_type(&self) -> TaskType;
+
+    fn get_db_string_structures() -> &'static str;
+
+    fn get_file_path() -> &'static str;
+}
+
+pub trait ManageDatabase<T: DbRecord> {
+    fn read_data() -> Vec<T>;
+
+    fn remove_record(record_id: String) {
+        let tasks = Self::read_data();
+        let mut db_tasks: Vec<T> = vec![];
+
+        let mut line_to_delete_exists = false;
+        for task in tasks {
+            if task.get_id() == record_id {
+                line_to_delete_exists = true;
+            }
+            db_tasks.push(task);
+        }
+        if !line_to_delete_exists {
+            panic!("This record does not exist");
+        }
+
+        // base cakndslsad
+        let mut lines_updated: Vec<String> = vec![String::from(T::get_db_string_structures())];
+
+        for current_task in db_tasks {
+            let mut new_line: String = String::from("");
+
+            if current_task.get_id() != record_id {
+                new_line = current_task.to_string()
+            } else {
+                continue;
+            }
+            Task::string_to_record(new_line.clone());
+            lines_updated.push(new_line);
+        }
+
+        let parsed_data: String = lines_updated.join("\n");
+
+        Self::write_data(parsed_data)
+    }
+
+    fn write_data(data: String) {
+        let mut output = File::create(T::get_file_path()).unwrap();
+        write!(output, "{}", data).unwrap();
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -28,7 +76,7 @@ pub struct Task {
     pub name: String,
 }
 
-impl DB_Record for Task {
+impl DbRecord for Task {
     fn to_string(&self) -> String {
         format!(
             "{}::{}::{}::{}::{}",
@@ -122,12 +170,18 @@ impl DB_Record for Task {
     fn get_type(&self) -> TaskType {
         self.task_type.clone()
     }
+
+    fn get_db_string_structures() -> &'static str {
+        "id::name::type::date::week,days"
+    }
+
+    fn get_file_path() -> &'static str {
+        "tasks.txt"
+    }
 }
 
-pub struct ManageDatabase {}
-
-impl ManageDatabase {
-    pub fn read_data() -> Vec<Task> {
+impl ManageDatabase<Task> for Task {
+    fn read_data() -> Vec<Task> {
         let input = File::open("tasks.txt").unwrap();
         let buffered = BufReader::new(input);
         let mut lines: Vec<String> = vec![];
@@ -146,10 +200,5 @@ impl ManageDatabase {
         }
 
         tasks
-    }
-
-    pub fn write_data(data: String) {
-        let mut output = File::create("tasks.txt").unwrap();
-        write!(output, "{}", data).unwrap();
     }
 }

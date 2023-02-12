@@ -12,7 +12,7 @@ use rocket::{
     serde::Deserialize,
 };
 use rocket::{Request, Response};
-use server::{DB_Record, ManageDatabase, Task, TaskType};
+use server::{DbRecord, ManageDatabase, Task, TaskType};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -22,7 +22,7 @@ pub struct SelectedTask {
 
 #[get("/get-tasks")]
 fn get_tasks() -> status::Custom<RawJson<String>> {
-    let tasks = ManageDatabase::read_data();
+    let tasks = Task::read_data();
 
     let serialized_tasks = serde_json::to_string(&tasks).unwrap();
 
@@ -32,7 +32,7 @@ fn get_tasks() -> status::Custom<RawJson<String>> {
 #[post("/get-task", data = "<data>")]
 fn get_task(data: Json<SelectedTask>) -> status::Custom<RawJson<String>> {
     println!("{:?}", data);
-    let tasks = ManageDatabase::read_data();
+    let tasks = Task::read_data();
 
     let serialized_task = serde_json::to_string(&tasks[usize::from(data.id - 1)]).unwrap();
 
@@ -52,7 +52,7 @@ pub struct TaskInput {
 
 #[post("/update-task", data = "<data>")]
 fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
-    let mut tasks = ManageDatabase::read_data();
+    let mut tasks = Task::read_data();
 
     println!("{}", data.id.unwrap());
 
@@ -87,14 +87,14 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
 
     let parsed_data: String = lines_updated.join("\n");
 
-    ManageDatabase::write_data(parsed_data);
+    Task::write_data(parsed_data);
 
     status::Accepted(Some(format!("id: '{}'", data.id.unwrap())))
 }
 
 #[post("/new-task", data = "<data>")]
 fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
-    let tasks = ManageDatabase::read_data();
+    let tasks = Task::read_data();
     let mut lines: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
     for task in tasks.clone() {
@@ -119,7 +119,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
 
     let parsed_data: String = lines.join("\n");
 
-    ManageDatabase::write_data(parsed_data);
+    Task::write_data(parsed_data);
 
     status::Accepted(Some(format!("id: '{}'", lines.len() - 1)))
 }
@@ -128,44 +128,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
 fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
     println!("{:?}", data);
 
-    let tasks = ManageDatabase::read_data();
-    let mut db_tasks: Vec<Task> = vec![];
-
-    let mut line_to_delete_exists = false;
-    for task in tasks.clone() {
-        if task.id == data.id.to_string() {
-            line_to_delete_exists = true;
-        }
-        db_tasks.push(task);
-    }
-    if !line_to_delete_exists {
-        panic!("This task does not exist");
-    }
-
-    let mut lines_updated: Vec<String> = vec![String::from("id::name::type::date::week,days")];
-
-    for current_task in db_tasks {
-        let mut new_line: String = String::from("");
-
-        if current_task.id.parse::<u8>().unwrap() != data.id {
-            let new_task: Task = Task {
-                name: current_task.name,
-                id: lines_updated.len().to_string(),
-                date: current_task.date,
-                task_type: current_task.task_type,
-                week_days: current_task.week_days,
-            };
-            new_line = new_task.to_string()
-        } else {
-            continue;
-        }
-        Task::string_to_record(new_line.clone());
-        lines_updated.push(new_line);
-    }
-
-    let parsed_data: String = lines_updated.join("\n");
-
-    ManageDatabase::write_data(parsed_data);
+    Task::remove_record(data.id.to_string());
 
     status::Accepted(Some(format!("Task deleted: '{}'", data.id)))
 }
