@@ -12,7 +12,7 @@ use rocket::{
     serde::Deserialize,
 };
 use rocket::{Request, Response};
-use server::{parse_task_to_string, verify_and_parse_input_record, ManageDatabase, Task, TaskType};
+use server::{ManageDatabase, Task, TaskType};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -79,9 +79,9 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
             task_type: current_task.task_type,
             week_days: current_task.week_days,
         };
-        let new_line = parse_task_to_string(new_task);
+        let new_line = new_task.to_string();
 
-        verify_and_parse_input_record(new_line.clone());
+        Task::string_to_task(new_line.clone());
         lines_updated.push(new_line);
     }
 
@@ -101,7 +101,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
         if task.name == data.name {
             panic!("This name is already in use")
         }
-        lines.push(parse_task_to_string(task));
+        lines.push(task.to_string());
     }
 
     let new_task: Task = Task {
@@ -111,9 +111,9 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
         task_type: data.task_type.clone(),
         week_days: data.week_days.clone(),
     };
-    let line_to_add = parse_task_to_string(new_task);
+    let line_to_add = new_task.to_string();
 
-    verify_and_parse_input_record(line_to_add.clone());
+    Task::string_to_task(line_to_add.clone());
 
     lines.push(line_to_add);
 
@@ -155,11 +155,11 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
                 task_type: current_task.task_type,
                 week_days: current_task.week_days,
             };
-            new_line = parse_task_to_string(new_task);
+            new_line = new_task.to_string()
         } else {
             continue;
         }
-        verify_and_parse_input_record(new_line.clone());
+        Task::string_to_task(new_line.clone());
         lines_updated.push(new_line);
     }
 
@@ -170,6 +170,27 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
     status::Accepted(Some(format!("Task deleted: '{}'", data.id)))
 }
 
+// #[derive(Deserialize, Debug)]
+// #[serde(crate = "rocket::serde")]
+// pub struct DoneInput {
+//     date: String,
+//     time: u8,
+//     id: u8,
+// }
+
+// #[post("/done-task", data = "<data>")]
+// fn done_and_undone_task(data: Json<DoneInput>) -> status::Accepted<String> {
+//     let mut stats = ManageStatsDatabase::read_data();
+
+//     for record in stats.iter() {
+//         println!("{}", record.id)
+//     }
+
+//     println!("{}", data.id);
+
+//     status::Accepted(Some(format!("id: '{}'", data.id)))
+// }
+
 #[launch]
 fn rocket() -> _ {
     rocket::build()
@@ -177,7 +198,14 @@ fn rocket() -> _ {
         .mount("/", FileServer::from(relative!("dist")))
         .mount(
             "/api",
-            routes![get_tasks, new_task, delete_task, get_task, update_task],
+            routes![
+                get_tasks,
+                new_task,
+                delete_task,
+                get_task,
+                update_task,
+                // done_and_undone_task
+            ],
         )
 }
 
