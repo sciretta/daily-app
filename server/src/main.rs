@@ -12,7 +12,7 @@ use rocket::{
     serde::Deserialize,
 };
 use rocket::{Request, Response};
-use server::{ManageDatabase, Task, TaskType};
+use server::{DB_Record, ManageDatabase, Task, TaskType};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -81,7 +81,7 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
         };
         let new_line = new_task.to_string();
 
-        Task::string_to_task(new_line.clone());
+        Task::string_to_record(new_line.clone());
         lines_updated.push(new_line);
     }
 
@@ -113,7 +113,7 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     };
     let line_to_add = new_task.to_string();
 
-    Task::string_to_task(line_to_add.clone());
+    Task::string_to_record(line_to_add.clone());
 
     lines.push(line_to_add);
 
@@ -159,7 +159,7 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
         } else {
             continue;
         }
-        Task::string_to_task(new_line.clone());
+        Task::string_to_record(new_line.clone());
         lines_updated.push(new_line);
     }
 

@@ -3,6 +3,22 @@ use rocket::serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+pub enum TaskType {
+    TODO,
+    HABIT,
+}
+
+pub trait DB_Record {
+    fn to_string(&self) -> String;
+
+    fn string_to_record(data: String) -> Self;
+
+    fn get_id(&self) -> String;
+
+    fn get_type(&self) -> TaskType;
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Task {
     pub id: String,
@@ -12,8 +28,8 @@ pub struct Task {
     pub name: String,
 }
 
-impl Task {
-    pub fn to_string(&self) -> String {
+impl DB_Record for Task {
+    fn to_string(&self) -> String {
         format!(
             "{}::{}::{}::{}::{}",
             self.id,
@@ -45,7 +61,7 @@ impl Task {
         )
     }
 
-    pub fn string_to_task(data: String) -> Task {
+    fn string_to_record(data: String) -> Task {
         let task_data: Vec<&str> = data.split("::").collect();
         let id = task_data[0].to_string();
         let name = task_data[1].to_string();
@@ -98,12 +114,14 @@ impl Task {
             date: date,
         }
     }
-}
 
-#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
-pub enum TaskType {
-    TODO,
-    HABIT,
+    fn get_id(&self) -> String {
+        self.id.clone()
+    }
+
+    fn get_type(&self) -> TaskType {
+        self.task_type.clone()
+    }
 }
 
 pub struct ManageDatabase {}
@@ -124,7 +142,7 @@ impl ManageDatabase {
             if line.contains("id::name::type::date::week,days") {
                 continue;
             }
-            tasks.push(Task::string_to_task(line));
+            tasks.push(Task::string_to_record(line));
         }
 
         tasks
