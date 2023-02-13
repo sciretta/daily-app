@@ -41,7 +41,6 @@ pub trait ManageDatabase<T: DbRecord> {
             panic!("This record does not exist");
         }
 
-        // base cakndslsad
         let mut lines_updated: Vec<String> = vec![String::from(T::get_db_string_structures())];
 
         for current_task in db_tasks {
@@ -182,7 +181,7 @@ impl DbRecord for Task {
 
 impl ManageDatabase<Task> for Task {
     fn read_data() -> Vec<Task> {
-        let input = File::open("tasks.txt").unwrap();
+        let input = File::open(Task::get_file_path()).unwrap();
         let buffered = BufReader::new(input);
         let mut lines: Vec<String> = vec![];
 
@@ -200,5 +199,94 @@ impl ManageDatabase<Task> for Task {
         }
 
         tasks
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Stat {
+    pub id: String,
+    pub task_type: TaskType,
+    pub date: String,
+    pub time_in_hours: u8,
+}
+
+impl DbRecord for Stat {
+    fn to_string(&self) -> String {
+        format!(
+            "{}::{}::{}::{}",
+            self.id,
+            match self.task_type {
+                TaskType::HABIT => "HABIT",
+                TaskType::TODO => "TODO",
+            },
+            self.date,
+            self.time_in_hours.to_string()
+        )
+    }
+
+    fn string_to_record(data: String) -> Stat {
+        let task_data: Vec<&str> = data.split("::").collect();
+
+        let id = task_data[0].to_string();
+
+        let task_type = match task_data[1] {
+            "HABIT" => TaskType::HABIT,
+            "TODO" => TaskType::TODO,
+            _ => {
+                panic!("Invalid task type value")
+            }
+        };
+
+        let date = NaiveDate::parse_from_str(task_data[2], "%Y-%m-%d")
+            .unwrap()
+            .to_string();
+
+        let mut time_in_hours = task_data[3].parse::<u8>().unwrap();
+
+        Stat {
+            id,
+            task_type,
+            date,
+            time_in_hours,
+        }
+    }
+
+    fn get_id(&self) -> String {
+        self.id.clone()
+    }
+
+    fn get_type(&self) -> TaskType {
+        self.task_type.clone()
+    }
+
+    fn get_db_string_structures() -> &'static str {
+        "id::type::done_date::time_in_hours"
+    }
+
+    fn get_file_path() -> &'static str {
+        "stats.txt"
+    }
+}
+
+impl ManageDatabase<Stat> for Stat {
+    fn read_data() -> Vec<Stat> {
+        let input = File::open(Stat::get_file_path()).unwrap();
+        let buffered = BufReader::new(input);
+        let mut lines: Vec<String> = vec![];
+
+        for line in buffered.lines() {
+            lines.push(line.unwrap().to_string());
+        }
+
+        let mut stats: Vec<Stat> = vec![];
+
+        for line in lines.clone() {
+            if line.contains("id::name::type::date::week,days") {
+                continue;
+            }
+            stats.push(Stat::string_to_record(line));
+        }
+
+        stats
     }
 }
