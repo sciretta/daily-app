@@ -18,7 +18,7 @@ pub trait DbRecord {
 
     fn get_type(&self) -> TaskType;
 
-    fn get_db_string_structures() -> &'static str;
+    fn get_db_string_structure() -> &'static str;
 
     fn get_file_path() -> &'static str;
 }
@@ -41,7 +41,7 @@ pub trait ManageDatabase<T: DbRecord> {
             panic!("This record does not exist");
         }
 
-        let mut lines_updated: Vec<String> = vec![String::from(T::get_db_string_structures())];
+        let mut lines_updated: Vec<String> = vec![String::from(T::get_db_string_structure())];
 
         for current_task in db_tasks {
             let mut new_line: String = String::from("");
@@ -58,6 +58,25 @@ pub trait ManageDatabase<T: DbRecord> {
         let parsed_data: String = lines_updated.join("\n");
 
         Self::write_data(parsed_data)
+    }
+
+    fn new_record(data: T) {
+        let tasks = Self::read_data();
+        let mut lines: Vec<String> = vec![String::from(T::get_db_string_structure())];
+
+        for task in tasks {
+            lines.push(task.to_string());
+        }
+
+        let line_to_add = data.to_string();
+
+        T::string_to_record(line_to_add.clone());
+
+        lines.push(line_to_add);
+
+        let parsed_data: String = lines.join("\n");
+
+        Self::write_data(parsed_data);
     }
 
     fn write_data(data: String) {
@@ -170,7 +189,7 @@ impl DbRecord for Task {
         self.task_type.clone()
     }
 
-    fn get_db_string_structures() -> &'static str {
+    fn get_db_string_structure() -> &'static str {
         "id::name::type::date::week,days"
     }
 
@@ -259,7 +278,7 @@ impl DbRecord for Stat {
         self.task_type.clone()
     }
 
-    fn get_db_string_structures() -> &'static str {
+    fn get_db_string_structure() -> &'static str {
         "id::type::done_date::time_in_hours"
     }
 

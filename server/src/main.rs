@@ -95,13 +95,11 @@ fn update_task(data: Json<TaskInput>) -> status::Accepted<String> {
 #[post("/new-task", data = "<data>")]
 fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
     let tasks = Task::read_data();
-    let mut lines: Vec<String> = vec![String::from("id::name::type::date::week,days")];
 
     for task in tasks.clone() {
         if task.name == data.name {
             panic!("This name is already in use")
         }
-        lines.push(task.to_string());
     }
 
     let new_task: Task = Task {
@@ -111,17 +109,10 @@ fn new_task(data: Json<TaskInput>) -> status::Accepted<String> {
         task_type: data.task_type.clone(),
         week_days: data.week_days.clone(),
     };
-    let line_to_add = new_task.to_string();
 
-    Task::string_to_record(line_to_add.clone());
+    Task::new_record(new_task);
 
-    lines.push(line_to_add);
-
-    let parsed_data: String = lines.join("\n");
-
-    Task::write_data(parsed_data);
-
-    status::Accepted(Some(format!("id: '{}'", lines.len() - 1)))
+    status::Accepted(Some(format!("id: '{}'", tasks.len() + 1)))
 }
 
 #[post("/delete-task", data = "<data>")]
@@ -133,17 +124,17 @@ fn delete_task(data: Json<SelectedTask>) -> status::Accepted<String> {
     status::Accepted(Some(format!("Task deleted: '{}'", data.id)))
 }
 
-// #[derive(Deserialize, Debug)]
-// #[serde(crate = "rocket::serde")]
-// pub struct DoneInput {
-//     date: String,
-//     time: u8,
-//     id: u8,
-// }
+#[derive(Deserialize, Debug)]
+#[serde(crate = "rocket::serde")]
+pub struct DoneInput {
+    date: String,
+    time: u8,
+    id: u8,
+}
 
 // #[post("/done-task", data = "<data>")]
 // fn done_and_undone_task(data: Json<DoneInput>) -> status::Accepted<String> {
-//     let mut stats = ManageStatsDatabase::read_data();
+//     let stats = Stat::read_data();
 
 //     for record in stats.iter() {
 //         println!("{}", record.id)
