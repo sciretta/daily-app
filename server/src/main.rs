@@ -12,7 +12,7 @@ use rocket::{
     serde::Deserialize,
 };
 use rocket::{Request, Response};
-use server::{DbRecord, ManageDatabase, Task, TaskType};
+use server::{DbRecord, ManageDatabase, Stat, Task, TaskType};
 
 #[derive(Deserialize, Debug)]
 #[serde(crate = "rocket::serde")]
@@ -130,20 +130,31 @@ pub struct DoneInput {
     date: String,
     time: u8,
     id: u8,
+    task_type: TaskType,
 }
 
-// #[post("/done-task", data = "<data>")]
-// fn done_and_undone_task(data: Json<DoneInput>) -> status::Accepted<String> {
-//     let stats = Stat::read_data();
+#[post("/done-task", data = "<data>")]
+fn done_and_undone_task(data: Json<DoneInput>) -> status::Accepted<String> {
+    let stats = Stat::read_data();
 
-//     for record in stats.iter() {
-//         println!("{}", record.id)
-//     }
+    for stat_record in stats.iter() {
+        if stat_record.id == data.id.to_string() {
+            Stat::remove_record(stat_record.id.clone());
+            return status::Accepted(Some(format!("task id: '{}', marked as undone", data.id)));
+        }
+    }
 
-//     println!("{}", data.id);
+    let new_stat: Stat = Stat {
+        id: data.id.to_string(),
+        task_type: data.task_type.clone(),
+        date: data.date.clone(),
+        time_in_hours: data.time,
+    };
 
-//     status::Accepted(Some(format!("id: '{}'", data.id)))
-// }
+    Stat::new_record(new_stat);
+
+    status::Accepted(Some(format!("task id: '{}', marked as done", data.id)))
+}
 
 #[launch]
 fn rocket() -> _ {
@@ -158,7 +169,7 @@ fn rocket() -> _ {
                 delete_task,
                 get_task,
                 update_task,
-                // done_and_undone_task
+                done_and_undone_task
             ],
         )
 }

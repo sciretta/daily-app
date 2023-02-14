@@ -27,15 +27,15 @@ pub trait ManageDatabase<T: DbRecord> {
     fn read_data() -> Vec<T>;
 
     fn remove_record(record_id: String) {
-        let tasks = Self::read_data();
-        let mut db_tasks: Vec<T> = vec![];
+        let records = Self::read_data();
+        let mut db_records: Vec<T> = vec![];
 
         let mut line_to_delete_exists = false;
-        for task in tasks {
-            if task.get_id() == record_id {
+        for record in records {
+            if record.get_id() == record_id {
                 line_to_delete_exists = true;
             }
-            db_tasks.push(task);
+            db_records.push(record);
         }
         if !line_to_delete_exists {
             panic!("This record does not exist");
@@ -43,15 +43,15 @@ pub trait ManageDatabase<T: DbRecord> {
 
         let mut lines_updated: Vec<String> = vec![String::from(T::get_db_string_structure())];
 
-        for current_task in db_tasks {
-            let mut new_line: String = String::from("");
+        for current_record in db_records {
+            let mut new_line = String::from("");
 
-            if current_task.get_id() != record_id {
-                new_line = current_task.to_string()
+            if current_record.get_id() != record_id {
+                new_line = current_record.to_string()
             } else {
                 continue;
             }
-            Task::string_to_record(new_line.clone());
+            T::string_to_record(new_line.clone());
             lines_updated.push(new_line);
         }
 
@@ -61,11 +61,11 @@ pub trait ManageDatabase<T: DbRecord> {
     }
 
     fn new_record(data: T) {
-        let tasks = Self::read_data();
+        let records = Self::read_data();
         let mut lines: Vec<String> = vec![String::from(T::get_db_string_structure())];
 
-        for task in tasks {
-            lines.push(task.to_string());
+        for record in records {
+            lines.push(record.to_string());
         }
 
         let line_to_add = data.to_string();
@@ -211,7 +211,7 @@ impl ManageDatabase<Task> for Task {
         let mut tasks: Vec<Task> = vec![];
 
         for line in lines.clone() {
-            if line.contains("id::name::type::date::week,days") {
+            if line.contains(Self::get_db_string_structure()) {
                 continue;
             }
             tasks.push(Task::string_to_record(line));
@@ -300,7 +300,7 @@ impl ManageDatabase<Stat> for Stat {
         let mut stats: Vec<Stat> = vec![];
 
         for line in lines.clone() {
-            if line.contains("id::name::type::date::week,days") {
+            if line.contains(Self::get_db_string_structure()) {
                 continue;
             }
             stats.push(Stat::string_to_record(line));
